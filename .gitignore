@@ -1,0 +1,73 @@
+# ==========================
+# Node.js
+# ==========================
+# Dependências
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs
+logs/
+*.log
+.log.
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# Build / dist
+dist/
+build/
+coverage/
+.tmp/
+.cache/
+.nyc_output/
+.next/
+out/
+.babel-cache/
+.eslintcache
+
+# IDEs / Sistema operacional
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ==========================
+# SQLite
+# ==========================
+# Banco de dados
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+
+# ==========================
+# Outras pastas temporárias
+# ==========================
+# Testes e cache
+_pycache_/
+*.tmp
+*.temp
+*.bak
+
+# ==========================
+# Opções de deploy
+# ==========================
+# Pastas criadas no deploy
+.vercel/
+.netlify/
