@@ -62,53 +62,118 @@ db.get('SELECT * FROM usuarios WHERE email = ?', [email],  async (err, usuario) 
     ``
     const token = jwt.sign({ id: usuario.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const refreshToken = jwt.sign({ id: usuario.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const cleanRefreshToken = refreshToken.replace(/\n/g, '');
     const expiraEm = new Date();
     expiraEm.setDate(expiraEm.getDate() + 7);
+
+    console.log('Tentando salvar refresh token no banco...');
+    console.log('Token a ser salvo:', refreshToken);
+    console.log('User ID:', usuario.id);
+
     db.run(
-        'INSERT INTO refresh_tokens (token, usuario_id, expira_em) VALUES (?, ?, ?)',
-        [refreshToken, usuario.id, expiraEm.toISOString()],
-        function(err) {
+        'INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES (?, ?, ?)',
+        [refreshToken, usuario.id, expiraEm.toISOString()], function(err) {
             if (err) {
-                console.log('Erro ao salvar refresh token:', err);
+                console.log('ERRO ao salvar refresh token:', err);
+            } else {
+                console.log('Refresh token Salvo no banco com sucesso!');
+                console.log('ID do token salvo:', this.lastID);
             }
         }
     );
     ``
     res.json({ 
         mensagem: 'Login realizado com sucesso',
-        acessToken: token,
+        accessToken: token,
         refreshToken: refreshToken,
         usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email } });
 });
 };
 ``
 const refreshTokenHandler = async (req, res) => {
-    console.log('Body recebido:', JSON.stringify(req.body));
+    
+    console.log('=== INICIANDO REFRESH TOKEN ==='); 
+    console.log('Body recebido:', req.body); 
+    console.log('Refresh token recebido:', req.body.refreshToken); 
+
         const { refreshToken } = req.body;
+
         if (!refreshToken) {
+            console.log('Refresh token não recebido');
             return res.status(400).json({ error: 'Refresh token é obrigatório' });
         }
+        ``
         try {
-  console.log('Tentando verificar token...');
+  console.log('Tentando verificar JWT...');
   const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
   console.log('Token decodificado:', decoded);
-  
-  db.get('SELECT * FROM refresh_tokens WHERE token = ? AND usuario_id = ?', [refreshToken, decoded.id], (err, tokenRow) => {
+  ``
+  console.log('buscando token no banco...');
+
+  db.get('SELECT * FROM refresh_tokens WHERE token = ? AND user_id = ?', 
+    [refreshToken, decoded.id], (err, tokenRow) => {
     if (err) {
-      console.log('Erro no SELECT:', err);
+      console.log('Erro no SELECT do banco:', err);
+
       return res.status(403).json({ error: 'Refresh token inválido' });
     }
-    if (!tokenRow) {
+     console.log('Resultado do banco:', tokenRow);
+
+     if (!tokenRow) {
       console.log('Token não encontrado no banco');
       return res.status(403).json({ error: 'Refresh token inválido' });
     }
-    console.log('Token encontrado no banco:', tokenRow);
+
+    console.log('Token válido no banco, gerando novo access token...');
     const newAccessToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    console.log('novo access token gerado');
     res.json({ accessToken: newAccessToken });
   });
+
 } catch (error) {
   console.log('Erro na verificação JWT:', error.message);
   return res.status(403).json({ error: 'Refresh token inválido' });
 }
 };
-module.exports = { cadastrarUsuario, loginUsuario, refreshTokenHandler };
+``
+const logout = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(400).json({
+                error: 'Refresh token é obrigatório'
+            });
+        }
+
+        db.run(
+            'DELETE FROM refresh_tokens WHERE token = ?',
+            [refreshToken],
+            function(err) {
+                if (err) {
+                    console.error('Erro ao deletar token:', err);
+                    return res.status(500).json({
+                        error: 'Erro interno ao fazer logout'
+                    });
+                }
+                if (this.changes ===0) {
+                    return res.status(404).json({
+                        error: 'Refresh token não encontrado'
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    message: 'Logout realizado com sucesso'
+                });
+            }
+        );
+
+    } catch (error) {
+        console.error('Erro no logout:', error);
+        res.status(500).json({
+            error: 'Erro interno no servidor durante logout'
+        });
+    }
+};
+module.exports = { cadastrarUsuario, loginUsuario, refreshTokenHandler, logout }; 

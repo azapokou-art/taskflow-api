@@ -9,7 +9,7 @@ const criarTarefa = (req, res) => {
     console.log('Projeto ID:', projeto_id);
     ``
     if (!titulo || !projeto_id) {
-        return res.status(400).josn({ erro: 'Título e projeto são obrigatórios' });
+        return res.status(400).json({ erro: 'Título e projeto são obrigatórios' });
     }
     ``
     db.run(
@@ -19,14 +19,17 @@ const criarTarefa = (req, res) => {
             if (err) {
                 return res.status(400).json({ erro: 'Erro ao criar tarefa' });
             }
-            res.status(201).json({ id: this.lastID, mensagem: 'Tarefa criada com sucesso' });
+            return res.status(201).json({ id: this.lastID, mensagem: 'Tarefa criada com sucesso' });
         }
     );
 };
 ``
 const listarTarefas = (req, res) => {
     const usuario_id = req.usuarioId;
-    const { projeto_id } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const { projeto_id, status, prioridade, search } = req.query;
     ``
     let sql = 'SELECT * FROM tarefas WHERE usuario_id = ?';
     let params = [usuario_id];
@@ -35,6 +38,24 @@ const listarTarefas = (req, res) => {
         sql += ' AND projeto_id = ?';
         params.push(projeto_id);
     }
+
+    if (status) {
+        sql += ' AND status = ?';
+        params.push(status);
+    }
+
+    if (prioridade) {
+        sql += ' AND prioridade = ?';
+        params.push(prioridade);
+    }
+
+    if (search) {
+        sql += ' AND (titulo LIKE ? OR descricao LIKE ?)';
+        params.push(`%${search}%`, `%${search}%`);
+    }
+
+    sql += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
     ``
     db.all(sql,params, (err, tarefas) => {
         if (err) {
