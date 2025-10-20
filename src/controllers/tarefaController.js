@@ -29,7 +29,7 @@ const listarTarefas = (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const { projeto_id, status, prioridade, search } = req.query;
+    const { projeto_id, status, prioridade, search, sort = 'id', order = 'desc' } = req.query;
     ``
     let sql = 'SELECT * FROM tarefas WHERE usuario_id = ?';
     let params = [usuario_id];
@@ -53,6 +53,14 @@ const listarTarefas = (req, res) => {
         sql += ' AND (titulo LIKE ? OR descricao LIKE ?)';
         params.push(`%${search}%`, `%${search}%`);
     }
+
+    const allowedSortFields = ['id', 'titulo', 'prioridade', 'status'];
+    const allowedOrders = ['asc', 'desc'];
+
+    const sortField = allowedSortFields.includes(sort) ? sort : 'id'
+    const sortOrder = allowedOrders.includes(order.toLowerCase()) ? order.toUpperCase() : 'DESC';
+    
+    sql += ` ORDER BY ${sortField} ${sortOrder}`;
 
     sql += ' LIMIT ? OFFSET ?';
     params.push(limit, offset);
