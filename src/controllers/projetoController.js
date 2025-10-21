@@ -99,4 +99,67 @@ const deletarProjeto = (req, res) => {
     );
 };
 ``
-module.exports = { criarProjeto, listarProjetos, buscarProjetoPorId, atualizarProjeto, deletarProjeto };
+const listarTarefasDoProjeto = (req, res) => {
+    const usuario_id = req.usuarioId;
+    const projeto_id = req.params.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const { status, prioridade, search, sort = 'id', order = 'desc' } = req.query;
+    
+    db.get('SELECT * FROM projetos WHERE id = ? AND usuario_id = ?', [projeto_id, usuario_id], (err, projeto) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao verificar projeto' });
+        }
+        if (!projeto) {
+            return res.status(404).json({ error: 'Projeto não encontrado' });
+        }
+        let sql = 'SELECT * FROM tarefas WHERE projeto_id = ? AND usuario_id = ?';
+
+        let params = [projeto_id, usuario_id];
+
+        if (status) {
+            sql += ' AND status = ?';
+            params.push(status);
+        }
+        if (prioridade) {
+            sql += 'AND prioridade = ?';
+            params.push(prioridade);
+        }
+        if (search) {
+            sql += 'AND (titulo LIKE ? OR descricao LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`);
+        }
+        const allowedSortFields = ['id', 'titulo', 'prioridade', 'status'];
+        const allowedOrders = ['asc', 'desc'];
+        const sortField = allowedSortFields.includes(sort) ? sort : 'id';
+        const sortOrder = allowedOrders.includes(order.toLowerCase()) ? order.toUpperCase() : 'DESC';
+
+        sql += ` ORDER BY ${sortField} ${sortOrder}`;
+
+        sql += ' LIMIT ? OFFSET ?';
+        params.push(limit, offset);
+
+        db.all(sql, params, (err, tarefas) => {
+            if (err) {
+                return res.status(500).json({ error: 'Erro ao buscar tarefas do projeto' });
+            }
+
+            res.json({
+                projeto: {
+                    id: projeto.id,
+                    nome: projeto.nome,
+                    descricao: projeto.descricao },
+                    tarefas: tarefas,
+                    pagination: {
+                        currentPage: page,
+                        itemsPerPage: limit,
+                        totalItems: tarefas.length
+                    }
+                });
+            });
+        });
+    };
+
+module.exports = { criarProjeto, listarProjetos, buscarProjetoPorId, atualizarProjeto, deletarProjeto, listarTarefasDoProjeto };
