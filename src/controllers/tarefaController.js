@@ -1,5 +1,5 @@
 const db = require('../config/database');
-``
+
 const criarTarefa = (req, res) => {
     const { titulo, descricao, status, prioridade, projeto_id } = req.body;
     const usuario_id = req.usuarioId;
@@ -7,13 +7,13 @@ const criarTarefa = (req, res) => {
     console.log('Body:', req.body);
     console.log('Usuario ID:', usuario_id);
     console.log('Projeto ID:', projeto_id);
-    ``
+    
     if (!titulo || !projeto_id) {
         return res.status(400).json({ erro: 'Título e projeto são obrigatórios' });
     }
-    ``
+    
     db.run(
-        'INSERT INTO tarefas (titulo, descricao, status, prioridade, projeto_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO tarefas (titulo, descricao, status, prioridade, projeto_id, usuario_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))',
         [titulo, descricao, status, prioridade, projeto_id, usuario_id],
         function(err) {
             if (err) {
@@ -23,17 +23,17 @@ const criarTarefa = (req, res) => {
         }
     );
 };
-``
+
 const listarTarefas = (req, res) => {
     const usuario_id = req.usuarioId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const { projeto_id, status, prioridade, search, sort = 'id', order = 'desc' } = req.query;
-    ``
+    
     let sql = 'SELECT * FROM tarefas WHERE usuario_id = ? AND deleted = 0';
     let params = [usuario_id];
-    ``
+    
     if (projeto_id) {
         sql += ' AND projeto_id = ?';
         params.push(projeto_id);
@@ -64,7 +64,7 @@ const listarTarefas = (req, res) => {
 
     sql += ' LIMIT ? OFFSET ?';
     params.push(limit, offset);
-    ``
+    
     db.all(sql,params, (err, tarefas) => {
         if (err) {
             return res.status(500).json({ erro: 'Erro ao buscar tarefas' });
@@ -83,11 +83,11 @@ const buscarTarefaPorId = (req, res) => {
                 console.log('Erro ao buscar tarefa:', err);
                 return res.status(500).json({ error: 'Erro ao buscar tarefa' });
             }
-            ``
+            
             if (!row) {
                 return res.status(404).json({ error: 'Tarefa não encontrada' });
             }
-            ``
+            
             console.log('Tarefa encontrada:', row);
             res.json(row);
         }
@@ -102,7 +102,7 @@ const usuario_id = req.usuarioId;
 console.log('=== ATUALIZANDO TAREFA ID:', id, '===');
 
 db.run(
-    'UPDATE tarefas SET titulo = ?, descricao = ?, status = ?, prioridade = ? WHERE id = ? AND usuario_id = ?',
+    'UPDATE tarefas SET titulo = ?, descricao = ?, status = ?, prioridade = ?, updated_at = datetime("now") WHERE id = ? AND usuario_id = ?',
     [titulo, descricao, status, prioridade, id, usuario_id],
     function(err) {
         if (err) {
@@ -151,7 +151,7 @@ const restaurarTarefa = (req, res) => {
     console.log('=== RESTAURANDO TAREFA ID:', id, '===');
 
     db.run(
-        'UPDATE tarefas SET deleted = 0, deleted_at = NULL WHERE id = ? AND usuario_id = ?',
+        'UPDATE tarefas SET deleted = 0, deleted_at = NULL, updated_at = datetime("now") WHERE id = ? AND usuario_id = ?',
         [id, usuario_id],
         function(err) {
             if (err) {
