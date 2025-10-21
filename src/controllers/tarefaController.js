@@ -31,7 +31,7 @@ const listarTarefas = (req, res) => {
     const offset = (page - 1) * limit;
     const { projeto_id, status, prioridade, search, sort = 'id', order = 'desc' } = req.query;
     ``
-    let sql = 'SELECT * FROM tarefas WHERE usuario_id = ?';
+    let sql = 'SELECT * FROM tarefas WHERE usuario_id = ? AND deleted = 0';
     let params = [usuario_id];
     ``
     if (projeto_id) {
@@ -76,7 +76,7 @@ const buscarTarefaPorId = (req, res) => {
     const { id } = req.params;
     const usuario_id = req.usuarioId;
     console.log('=== BUSCANDO TAREFA ID:', id, '===');
-    db.get( 'SELECT * FROM tarefas WHERE id = ? AND usuario_id = ?',
+    db.get( 'SELECT * FROM tarefas WHERE id = ? AND usuario_id = ? AND deleted = 0',
         [id, usuario_id],
         (err, row) => {
             if (err) {
@@ -124,10 +124,10 @@ const deletarTarefa = (req, res) => {
     const { id } = req.params;
     const usuario_id = req.usuarioId;
 
-    console.log('=== DELETANDO TAREFA ID:', id, '===');
+    console.log('=== SOFT DELETE TAREFA ID:', id, '===');
 
     db.run(
-        'DELETE FROM tarefas WHERE id = ? AND usuario_id = ?',
+        'UPDATE tarefas SET deleted = 1, deleted_at = datetime("now") WHERE id = ? AND usuario_id = ?',
         [id, usuario_id],
         function(err) {
             if (err) {
@@ -138,10 +138,36 @@ const deletarTarefa = (req, res) => {
                 return res.status(404).json({ error: 'Tarefa não encontrada' });
             }
 
-            console.log('Tarefa deletada com sucesso');
+            console.log('Tarefa marcada como deltada');
             res.json({ mensagem: 'Tarefa deletada com sucesso' });
         }
     );
 };
 
-module.exports = { criarTarefa, listarTarefas, buscarTarefaPorId, atualizarTarefa, deletarTarefa };
+const restaurarTarefa = (req, res) => {
+    const { id } = req.params;
+    const usuario_id = req.usuarioId;
+
+    console.log('=== RESTAURANDO TAREFA ID:', id, '===');
+
+    db.run(
+        'UPDATE tarefas SET deleted = 0, deleted_at = NULL WHERE id = ? AND usuario_id = ?',
+        [id, usuario_id],
+        function(err) {
+            if (err) {
+                console.log( 'Erro ao restaurar tarefa:', err);
+
+                return res.status(500).json({ error: 'Erro ao restaurar tarefa' });
+            }
+            
+            if (this.changes === 0) {
+                return res.status(404).json({ error: 'Tarefa não encontrada' });
+            }
+
+            console.log('Tarefa restaurada com sucesso');
+            res.json({ mensagem: 'Tarefa restaurada com sucesso' });
+        }
+    );
+};
+
+module.exports = { criarTarefa, listarTarefas, buscarTarefaPorId, atualizarTarefa, deletarTarefa, restaurarTarefa };
