@@ -96,14 +96,33 @@ const buscarTarefaPorId = (req, res) => {
 
 const atualizarTarefa = (req, res) => {
 const { id } = req.params;
-const {titulo, descricao, status, prioridade } = req.body;
+const { titulo: novoTitulo, descricao: novaDescricao, status: novoStatus, prioridade: novaPrioridade } = req.body;
 const usuario_id = req.usuarioId;
 
 console.log('=== ATUALIZANDO TAREFA ID:', id, '===');
 
+db.get('SELECT status FROM tarefas WHERE id = ? AND usuario_id = ?',
+    [id, usuario_id], (err, tarefaAtual) => {
+        if (err) {
+            console.log( 'Erro ao buscar tarefa:', err);
+            return res.status(500).json({ error: 'Erro ao buscar tarefa' });
+        }
+        if (!tarefaAtual) {
+            return res.status(404).json({ error: 'Tarefa não encontrada' })
+        }
+        
+        if (novoStatus && novoStatus !== tarefaAtual.status) {
+            const workflowValido = validarWorkflow(tarefaAtual.status, novoStatus);
+            if (!workflowValido) {
+                return res.status(400).json({ error: 'Transição de status inválida',
+                    detalhes: `Não é permitido mudar de "${tarefaAtual.status}" para "${novoStatus}"`
+                });
+            }
+            }
+
 db.run(
-    'UPDATE tarefas SET titulo = ?, descricao = ?, status = ?, prioridade = ?, updated_at = datetime("now") WHERE id = ? AND usuario_id = ?',
-    [titulo, descricao, status, prioridade, id, usuario_id],
+    'UPDATE tarefas SET titulo = COALESCE(?, titulo), descricao = COALESCE(?, descricao), status = COALESCE(?, status), prioridade = COALESCE(?, prioridade), updated_at = datetime("now") WHERE id = ? AND usuario_id = ?',
+    [novoTitulo, novaDescricao, novoStatus, novaPrioridade, id, usuario_id],
     function(err) {
         if (err) {
             console.log('Erro ao atualizar tarefa:', err);
@@ -118,6 +137,13 @@ db.run(
         res.json({ mensagem: 'Tarefa atualizada com sucesso' });
     }
 );
+});
+};
+
+const validarWorkflow = (statusAtual, novoStatus) => {
+    const workflowPermitido = { 'pendente': ['andamento', 'concluída'], 'andamento': ['concluída'], 'concluída': []
+    };
+    return workflowPermitido[statusAtual]?.includes(novoStatus) || false;
 };
 
 const deletarTarefa = (req, res) => {
