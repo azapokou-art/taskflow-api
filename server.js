@@ -8,6 +8,9 @@ const swaggerUi = require('swagger-ui-express');
 const helmet = require('helmet');
 app.use(helmet());
 app.use(express.json());
+app.use('/uploads',
+    express.static('uploads'));
+    
 const cors = require('cors');
 app.use(cors());
 const limiter = require('./src/middleware/rateLimiter');
@@ -41,6 +44,9 @@ const tarefaRoutes = require('./src/routes/tarefaRoutes');
 app.use('/api', tarefaRoutes);
 const healthRoutes = require('./src/routes/healthRoutes');
 app.use('/api', healthRoutes);
+const uploadRoutes = require('./src/routes/uploadRoutes');
+app.use('/api', uploadRoutes);
+
 const sanitizeInput = require('./src/middleware/sanitizeMiddleware');
 app.use(sanitizeInput);
 app.get('/', (req, res) => {
