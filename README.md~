@@ -78,12 +78,12 @@ taskflow-api/
 │   │   └── AuthService.js       
 │   └── shared/validators/       # Schemas de validação
 │       └── usuarioValidator.js  
-├── src/controller/             
-│   ├── usuarioRoutes.js         
-│   ├── projetoRoutes.js         
-│   ├── tarefaRoutes.js          
-│   ├── uploadRoutes.js          
-│   └── healthRoutes.js          
+├── src/router/             
+│   ├── usuarioRouter.js         
+│   ├── projetoRouter.js         
+│   ├── tarefaRouter.js          
+│   ├── uploadRouter.js          
+│   └── healthRouter.js          
 ├── uploads/                     # Arquivos uploadados
 ├── .env                         # Variáveis de ambiente
 ├── server.js                    # Entrada principal

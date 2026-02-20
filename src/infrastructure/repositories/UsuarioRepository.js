@@ -8,7 +8,10 @@ class UsuarioRepository {
                 [nome, email, senhaCriptografada],
                 function (err) {
                     if (err) {
-                        reject(new Error('Erro ao criar usuário no banco'));
+                        if (err) {
+                            console.error("ERRO SQLITE:", err);
+                            reject(err);
+                        }
                     } else {
                         resolve({
                             id: this.lastID,
@@ -22,16 +25,16 @@ class UsuarioRepository {
     }
 
     buscarPorId(id) {
-    return new Promise((resolve, reject) => {
-        db.get('SELECT * FROM usuarios WHERE id = ?', [id], (err, usuario) => {
-            if (err) {
-                reject(new Error('Erro ao buscar usuário'));
-            } else {
-                resolve(usuario);
-            }
+        return new Promise((resolve, reject) => {
+            db.get('SELECT * FROM usuarios WHERE id = ?', [id], (err, usuario) => {
+                if (err) {
+                    reject(new Error('Erro ao buscar usuário'));
+                } else {
+                    resolve(usuario);
+                }
+            });
         });
-    });
-}
+    }
     async buscarPorEmail(email, res) {
         return new Promise((resolve, reject) => {
             db.get('SELECT * FROM usuarios WHERE email = ?', [email], (err, usuario) => {
@@ -39,12 +42,12 @@ class UsuarioRepository {
                     reject(new Error('Erro interno do servidor'));
                     return;
                 }
-                
+
                 if (!usuario) {
                     reject(new Error('Credenciais inválidas'));
                     return;
                 }
-                
+
                 resolve(usuario);
             });
         });
