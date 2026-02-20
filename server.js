@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const db = require('./src/config/database');
+const db = require('./src/infrastructure/database/database');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -36,19 +36,20 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-const usuarioRoutes = require('./src/routes/usuarioRoutes');
-app.use('/api', usuarioRoutes);
-const projetoRoutes = require('./src/routes/projetoRoutes');
-app.use('/api', projetoRoutes);
-const tarefaRoutes = require('./src/routes/tarefaRoutes');
-app.use('/api', tarefaRoutes);
-const healthRoutes = require('./src/routes/healthRoutes');
-app.use('/api', healthRoutes);
-const uploadRoutes = require('./src/routes/uploadRoutes');
-app.use('/api', uploadRoutes);
-
 const sanitizeInput = require('./src/middleware/sanitizeMiddleware');
 app.use(sanitizeInput);
+const usuarioRouter = require('./src/router/usuarioRouter');
+app.use('/api', usuarioRouter);
+const projetoRouter = require('./src/router/projetoRouter');
+app.use('/api', projetoRouter);
+const tarefaRouter = require('./src/router/tarefaRouter');
+app.use('/api', tarefaRouter);
+const healthRouter = require('./src/router/healthRouter');
+app.use('/api', healthRouter);
+const uploadRouter = require('./src/router/uploadRouter');
+app.use('/api', uploadRouter);
+
+
 app.get('/', (req, res) => {
     res.json({ message: 'API está funcionando' });
 });

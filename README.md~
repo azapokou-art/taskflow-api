@@ -1,0 +1,306 @@
+TaskFlow API
+Uma API para gerenciamento de tarefas e projetos, construída com Node.js, Express e SQLite.
+
+Funcionalidades
+Autenticação & Usuários
+Cadastro de usuários com validação
+
+Login com JWT (Access + Refresh tokens)
+
+Perfil do usuário protegido
+
+Logout com invalidamento de tokens
+
+Refresh token automático
+
+Projetos
+CRUD completo de projetos
+
+Upload de imagens para projetos
+
+Filtragem e paginação
+
+Validação de propriedade do usuário
+
+Tarefas
+CRUD completo de tarefas
+
+Workflow de status (pendente → andamento → concluída)
+
+Soft delete e restauração
+
+Filtros por status, prioridade, projeto
+
+Paginação e ordenação
+
+Tecnologias
+Node.js + Express - Servidor API
+
+SQLite - Banco de dados
+
+JWT - Autenticação
+
+bcryptjs - Hash de senhas
+
+Multer - Upload de arquivos
+
+Joi - Validação de dados
+
+Helmet + CORS - Segurança
+
+Swagger - Documentação da API
+
+Estrutura do Projeto
+text
+taskflow-api/
+├── src/
+│   ├── application/handler/     # Handlers
+│   │   ├── usuarioHandler.js    
+│   │   ├── projetoHandler.js    
+│   │   ├── tarefaHandler.js     
+│   │   └── uploadHandler.js     
+│   ├── infrastructure/
+│   │   ├── database/            # Configuração do banco 
+│   │   │   └── database.js      
+│   │   └── repositories/        # Repositórios 
+│   │       ├── UsuarioRepository.js      
+│   │       ├── ProjetoRepository.js      
+│   │       ├── TarefaRepository.js       
+│   │       ├── RefreshTokenRepository.js 
+│   │       └── UploadRepository.js       
+│   ├── middleware/              # Middlewares 
+│   │   ├── authMiddleware.js    
+│   │   ├── sanitizeMiddleware.js 
+│   │   ├── rateLimiter.js       
+│   │   ├── errorHandler.js      
+│   │   └── uploadMiddleware.js  
+│   ├── services/                # Serviços
+│   │   └── AuthService.js       
+│   └── shared/validators/       # Schemas de validação
+│       └── usuarioValidator.js  
+├── src/controller/             
+│   ├── usuarioRoutes.js         
+│   ├── projetoRoutes.js         
+│   ├── tarefaRoutes.js          
+│   ├── uploadRoutes.js          
+│   └── healthRoutes.js          
+├── uploads/                     # Arquivos uploadados
+├── .env                         # Variáveis de ambiente
+├── server.js                    # Entrada principal
+└── package.json                 
+
+Instalação
+1. Clone o repositório
+bash
+git clone https://github.com/seu-usuario/taskflow-api.git
+cd taskflow-api
+2. Instale as dependências
+bash
+npm install
+3. Configure as variáveis de ambiente
+bash
+cp .env.example .env
+# Edite o .env com suas configurações
+4. Inicie o servidor
+bash
+npm start
+# ou
+node server.js
+A API estará disponível em http://localhost:3000
+
+Variáveis de Ambiente
+env
+PORT=3000
+NODE_ENV=development
+DB_PATH=./database.sqlite
+JWT_SECRET=sua_chave_secreta_jwt_aqui
+ACCESS_TOKEN_SECRET=sua_chave_access_token_aqui
+REFRESH_TOKEN_SECRET=sua_chave_refresh_token_aqui
+
+Documentação da API
+Acesse a documentação Swagger em:
+
+text
+http://localhost:3000/api-docs
+
+Autenticação
+A API usa Bearer Token JWT. Inclua no header:
+
+text
+Authorization: Bearer seu_token_jwt_aqui
+
+Endpoints Principais
+Autenticação
+POST /api/usuarios - Cadastro de usuário
+
+POST /api/login - Login
+
+POST /api/refresh-token - Refresh token
+
+POST /api/logout - Logout
+
+GET /api/usuarios/perfil - Perfil do usuário
+
+Projetos
+GET /api/projetos - Listar projetos
+
+POST /api/projetos - Criar projeto
+
+GET /api/projetos/:id - Buscar projeto
+
+PUT /api/projetos/:id - Atualizar projeto
+
+DELETE /api/projetos/:id - Deletar projeto
+
+POST /api/projetos/:id/upload - Upload de imagem
+
+Tarefas
+GET /api/tarefas - Listar tarefas (com filtros)
+
+POST /api/tarefas - Criar tarefa
+
+GET /api/tarefas/:id - Buscar tarefa
+
+PUT /api/tarefas/:id - Atualizar tarefa
+
+DELETE /api/tarefas/:id - Deletar tarefa (soft delete)
+
+POST /api/tarefas/:id/restaurar - Restaurar tarefa
+
+Workflow de Tarefas
+As tarefas seguem um fluxo de status estrito:
+
+text
+pendente → andamento → concluída
+Regras:
+
+Não é possível voltar de concluída para pendente
+
+Não é possível pular etapas
+
+Filtros de Tarefas
+Query Parameters para GET /api/tarefas:
+Parâmetro	Descrição	Exemplo
+projeto_id	Filtrar por projeto	?projeto_id=1
+status	Filtrar por status	?status=pendente
+prioridade	Filtrar por prioridade	?prioridade=alta
+search	Busca em título/descrição	?search=urgente
+page	Número da página	?page=2
+limit	Itens por página	?limit=20
+sort	Campo para ordenar	?sort=titulo
+order	Direção (asc/desc)	?order=desc
+
+Segurança
+Helmet.js - Headers de segurança
+
+CORS configurado
+
+Rate limiting (100 requisições/15min)
+
+Sanitização de inputs
+
+Validação de dados com Joi
+
+Hash de senhas com bcrypt
+
+Tokens JWT com expiração
+
+Banco de Dados
+Tabelas principais:
+sql
+-- Usuários
+CREATE TABLE usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    senha TEXT NOT NULL,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Projetos
+CREATE TABLE projetos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    descricao TEXT,
+    usuario_id INTEGER NOT NULL,
+    imagem_url TEXT,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+);
+
+-- Tarefas
+CREATE TABLE tarefas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo TEXT NOT NULL,
+    descricao TEXT,
+    status TEXT DEFAULT 'pendente',
+    prioridade TEXT DEFAULT 'media',
+    projeto_id INTEGER NOT NULL,
+    usuario_id INTEGER NOT NULL,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0,
+    deleted_at DATETIME,
+    FOREIGN KEY(projeto_id) REFERENCES projetos(id),
+    FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+);
+Dependências Principais
+json
+{
+  "express": "^4.18.2",
+  "sqlite3": "^5.1.6",
+  "jsonwebtoken": "^9.0.2",
+  "bcryptjs": "^2.4.3",
+  "dotenv": "^16.3.1",
+  "joi": "^17.11.0",
+  "multer": "^1.4.5-lts.1",
+  "helmet": "^7.1.0",
+  "cors": "^2.8.5",
+  "swagger-jsdoc": "^6.2.8",
+  "swagger-ui-express": "^5.0.0"
+}
+
+Testando a API
+Com Insomnia/Postman:
+Importe a coleção de endpoints
+
+Configure o environment com:
+
+base_url: http://localhost:3000
+
+token: (token JWT após login)
+
+Com curl:
+bash
+# Cadastro
+curl -X POST http://localhost:3000/api/usuarios \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Teste","email":"teste@email.com","senha":"123456"}'
+
+# Login
+curl -X POST http://localhost:3000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"teste@email.com","senha":"123456"}'
+
+# Criar projeto (com token)
+curl -X POST http://localhost:3000/api/projetos \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Meu Projeto","descricao":"Descrição"}'
+ Tratamento de Erros
+A API retorna códigos HTTP apropriados:
+
+Código	Situação
+200	Sucesso
+201	Criado com sucesso
+400	Bad Request (dados inválidos)
+401	Não autenticado
+403	Token inválido/expirado
+404	Recurso não encontrado
+422	Validação falhou
+500	Erro interno do servidor
+
+
+
+Versão: 1.0.0
+Última atualização: Janeiro 2026
